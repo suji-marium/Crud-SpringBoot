@@ -35,7 +35,9 @@ public class EmployeeController {
 
     @PostMapping("/addEmployee")
     public ResponseEntity<String> addEmployee(@Valid @RequestBody List<EmployeeDetails> employees) {
-        //employeeRepo.deleteAll();
+        employeeRepo.deleteAll();
+
+        //To check whether the id is unique or not
         for (EmployeeDetails employee : employees) {
             if (employeeRepo.existsById(employee.getId())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -43,6 +45,8 @@ public class EmployeeController {
             }
            
         }
+
+        //To check whether there is only 1 manager for a department
         for (EmployeeDetails employee : employees) {
             System.out.println(employee.getDesignation());
             System.out.println(employee.getDepartment());
@@ -78,7 +82,6 @@ public class EmployeeController {
                 //System.out.println(employeeRepo.employeeUnderManager(id));
                 EmployeeDetails employee = employeeOpt.get();
                 if (employee.getDesignation().matches("Account Manager")) {
-                    System.out.println(employeeRepo.employeeUnderManager(id));
                     if (employeeRepo.employeeUnderManager(id).isEmpty()) {
                         employeeRepo.deleteById(id);
                         EmployeeResponseUpdate response = new EmployeeResponseUpdate(
@@ -111,12 +114,14 @@ public class EmployeeController {
     List<EmployeeDetails> ListemployeeDetails=employeeRepo.findAll();
 
     for(EmployeeDetails employeeDetails:ListemployeeDetails){
+        //Manager id cannot be provided as employee id when to change the manager
         if(employeeDetails.getManagerId().equals(request.getEmployeeId())){
             EmployeeResponseUpdate response = new EmployeeResponseUpdate("Manager id cannot be provided as employee id");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
     Optional<EmployeeDetails> employeeOpt = employeeRepo.findById(request.getEmployeeId());
+    // check if employee is present
     if (!employeeOpt.isPresent()) {
         EmployeeResponseUpdate response = new EmployeeResponseUpdate("Employee not found");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
@@ -174,19 +179,14 @@ public class EmployeeController {
 
                 List<EmployeeDetails> filteredEmployeeList = employeeList.stream()
                     .filter(employee -> {
-                        if (employee.getDateOfJoining() != null && !employee.getDateOfJoining().isEmpty()) {
-                            try {
+                        
+                           
                                 LocalDateTime joiningDate = LocalDateTime.parse(employee.getDateOfJoining(), formatter);
                                 LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
                                 int yearsOfExperienceCalculated = (int) ChronoUnit.YEARS.between(joiningDate, now);
 
                                 return (managerId == null || managerId.equalsIgnoreCase(currentManagerId)) &&
                                     (yearOfExperience == null || yearsOfExperienceCalculated >= yearOfExperience);
-                            } catch (Exception e) {
-                                return false;
-                            }
-                        }
-                        return false;
                     })
                     .collect(Collectors.toList());
 
