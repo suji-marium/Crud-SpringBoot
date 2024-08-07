@@ -14,4 +14,6 @@ public interface EmployeeRepo extends MongoRepository<EmployeeDetails, String> {
     
     @Query("{managerId:'?0'}")
     public List<EmployeeDetails> employeeUnderManager(String managerId);
+
+    boolean existsById(String id);
 }

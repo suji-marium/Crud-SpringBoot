@@ -28,22 +28,44 @@ import com.example.mongoSpring.model.EmployeeResponseUpdate;
 @Validated
 public class EmployeeController {
 
+
     @Autowired
     private EmployeeRepo employeeRepo;
+    Map<String, String> departmentToManagerId = new HashMap<>();
 
     @PostMapping("/addEmployee")
     public ResponseEntity<String> addEmployee(@Valid @RequestBody List<EmployeeDetails> employees) {
-            employeeRepo.deleteAll();
-
-            for (EmployeeDetails employee : employees) {
-                Date today=new Date();
-                employee.setCreatedTime(today);
-                employeeRepo.save(employee);
+        //employeeRepo.deleteAll();
+        for (EmployeeDetails employee : employees) {
+            if (employeeRepo.existsById(employee.getId())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("ID " + employee.getId() + " already exists.");
             }
-            
-            return new ResponseEntity<>("Employee added successfully", HttpStatus.CREATED);
-        
-    }
+           
+        }
+        for (EmployeeDetails employee : employees) {
+            System.out.println(employee.getDesignation());
+            System.out.println(employee.getDepartment());
+            if (employee.getDesignation().equalsIgnoreCase("Account Manager")) {
+                if (departmentToManagerId.containsKey(employee.getDepartment())) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Department " + employee.getDepartment() + " already has a manager.");
+                }
+                departmentToManagerId.put(employee.getDepartment(), employee.getId());
+            }
+        }
+        System.out.println(departmentToManagerId);
+
+    
+        Date today = new Date();
+        for (EmployeeDetails employee : employees) {
+            employee.setCreatedTime(today);
+            employeeRepo.save(employee);
+        }
+
+        return new ResponseEntity<>("Employee(s) added successfully", HttpStatus.CREATED);
+}
+
 
     @DeleteMapping("/delete")
     public ResponseEntity<EmployeeResponseUpdate> deleteEmployee(
@@ -53,9 +75,11 @@ public class EmployeeController {
             Optional<EmployeeDetails> employeeOpt = employeeRepo.findById(id);
 
             if (employeeOpt.isPresent()) {
+                //System.out.println(employeeRepo.employeeUnderManager(id));
                 EmployeeDetails employee = employeeOpt.get();
                 if (employee.getDesignation().matches("Account Manager")) {
-                    if (employeeRepo.employeeUnderManager(id) == null) {
+                    System.out.println(employeeRepo.employeeUnderManager(id));
+                    if (employeeRepo.employeeUnderManager(id).isEmpty()) {
                         employeeRepo.deleteById(id);
                         EmployeeResponseUpdate response = new EmployeeResponseUpdate(
                             "Successfully deleted " + employee.getName() + " from the employee list of the organization");
@@ -181,7 +205,7 @@ public class EmployeeController {
             .collect(Collectors.toList());
 
         System.out.println(filteredResponses);
-        String responseMessage = filteredResponses.isEmpty() ? "No employees found" : "Employees retrieved successfully";
+        String responseMessage = filteredResponses.isEmpty() ? "No employees found" : "successfully fetched";
 
         EmployeeResponseGet response = new EmployeeResponseGet(responseMessage, filteredResponses);
 
