@@ -48,8 +48,6 @@ public class EmployeeController {
 
         //To check whether there is only 1 manager for a department
         for (EmployeeDetails employee : employees) {
-            System.out.println(employee.getDesignation());
-            System.out.println(employee.getDepartment());
             if (employee.getDesignation().equalsIgnoreCase("Account Manager")) {
                 if (departmentToManagerId.containsKey(employee.getDepartment())) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -58,7 +56,7 @@ public class EmployeeController {
                 departmentToManagerId.put(employee.getDepartment(), employee.getId());
             }
         }
-        System.out.println(departmentToManagerId);
+        //System.out.println(departmentToManagerId);
 
     
         Date today = new Date();
@@ -160,55 +158,80 @@ public class EmployeeController {
 
     
         List<EmployeeDetails> employees = employeeRepo.findAll();
+        System.out.println(employees);
 
+        //Creating a set with managerId
+        Set<String> allManagerIds=new HashSet<>();
+        for (EmployeeDetails employeeDetails : employees) {
+            if ("Account Manager".equals(employeeDetails.getDesignation())) {
+                allManagerIds.add(employeeDetails.getId());
+            }
+        }
         
         Map<String, List<EmployeeDetails>> employeesByManager = employees.stream()
             .collect(Collectors.groupingBy(EmployeeDetails::getManagerId));
         
-        System.out.println(employeesByManager);
+        
+        for (String mngId : allManagerIds) {
+                employeesByManager.putIfAbsent(mngId, new ArrayList<>());
+        }
+    
+        //System.out.println(employeesByManager);
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
 
+        // Create the filtered responses
         List<EmployeeResponse> filteredResponses = employeesByManager.entrySet().stream()
             .map(entry -> {
                 String currentManagerId = entry.getKey();
                 List<EmployeeDetails> employeeList = entry.getValue();
 
+                // Get manager details
                 Optional<EmployeeDetails> managerOpt = employeeRepo.findById(currentManagerId);
-                String managerNameOpt = managerOpt.map(EmployeeDetails::getName).orElse("Unknown");
+                String managerName = managerOpt.map(EmployeeDetails::getName).orElse("Unknown");
                 String managerDept = managerOpt.map(EmployeeDetails::getDepartment).orElse("Unknown");
 
+                // Filter employees
                 List<EmployeeDetails> filteredEmployeeList = employeeList.stream()
                     .filter(employee -> {
-                        
-                           
-                                LocalDateTime joiningDate = LocalDateTime.parse(employee.getDateOfJoining(), formatter);
-                                LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
-                                int yearsOfExperienceCalculated = (int) ChronoUnit.YEARS.between(joiningDate, now);
+                        LocalDateTime joiningDate = LocalDateTime.parse(employee.getDateOfJoining(), formatter);
+                        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
+                        int yearsOfExperienceCalculated = (int) ChronoUnit.YEARS.between(joiningDate, now);
 
-                                return (managerId == null || managerId.equalsIgnoreCase(currentManagerId)) &&
-                                    (yearOfExperience == null || yearsOfExperienceCalculated >= yearOfExperience);
+                        return (managerId == null || managerId.equalsIgnoreCase(currentManagerId)) &&
+                            (yearOfExperience == null || yearsOfExperienceCalculated >= yearOfExperience);
                     })
                     .collect(Collectors.toList());
 
-                if (!filteredEmployeeList.isEmpty() && Integer.parseInt(currentManagerId) > 0) {
+                // Include the manager in the response if conditions are met
+                if ((managerId == null || managerId.equalsIgnoreCase(currentManagerId)) && Integer.parseInt(currentManagerId)>0 &&
+                    (yearOfExperience == null || employeeList.stream()
+                        .anyMatch(employee -> {
+                            LocalDateTime joiningDate = LocalDateTime.parse(employee.getDateOfJoining(), formatter);
+                            LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
+                            int yearsOfExperienceCalculated = (int) ChronoUnit.YEARS.between(joiningDate, now);
+                            return yearsOfExperienceCalculated >= yearOfExperience;
+                        }))) {
                     return new EmployeeResponse(
-                        managerNameOpt,  
-                        managerDept,     
-                        currentManagerId, 
-                        filteredEmployeeList  
+                        managerName,
+                        managerDept,
+                        currentManagerId,
+                        filteredEmployeeList
                     );
                 } else {
-                    return null; 
+                    return null;
                 }
             })
-            .filter(Objects::nonNull) 
+            .filter(Objects::nonNull) // Remove null responses
             .collect(Collectors.toList());
 
         System.out.println(filteredResponses);
-        String responseMessage = filteredResponses.isEmpty() ? "No employees found" : "successfully fetched";
 
+    
+        String responseMessage = filteredResponses.isEmpty() ? "No employees found" : "Successfully fetched";
+
+    
         EmployeeResponseGet response = new EmployeeResponseGet(responseMessage, filteredResponses);
-
         return ResponseEntity.ok(response);
     }
+
 }
