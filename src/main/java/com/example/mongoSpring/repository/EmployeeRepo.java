@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import com.example.mongoSpring.model.EmployeeDetails;
 
+
 public interface EmployeeRepo extends MongoRepository<EmployeeDetails, String> {
     Optional<EmployeeDetails> findById(String id);
 
@@ -16,4 +17,6 @@ public interface EmployeeRepo extends MongoRepository<EmployeeDetails, String> {
     public List<EmployeeDetails> employeeUnderManager(String managerId);
 
     boolean existsById(String id);
+
+    List<EmployeeDetails> findAllByDepartment(String department);
 }
