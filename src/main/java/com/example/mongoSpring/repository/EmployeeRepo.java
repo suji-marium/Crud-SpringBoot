@@ -1,7 +1,6 @@
 package com.example.mongoSpring.repository;
 import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
 
 import java.util.Optional;
 
@@ -13,8 +12,7 @@ public interface EmployeeRepo extends MongoRepository<EmployeeDetails, String> {
 
     void deleteById(String id);
     
-    @Query("{managerId:'?0'}")
-    public List<EmployeeDetails> employeeUnderManager(String managerId);
+    public List<EmployeeDetails> findAllByManagerId(String managerId);
 
     boolean existsById(String id);
 

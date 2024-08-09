@@ -1,5 +1,4 @@
-package com.example.mongoSpring.model; // Ensure this is the correct package
-
+package com.example.mongoSpring.model; 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

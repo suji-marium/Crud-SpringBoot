@@ -1,5 +1,4 @@
 package com.example.mongoSpring.controller;
-import java.util.*;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,24 +30,26 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
+    // endpoint for post operation
     @PostMapping("/addEmployee")
     public ResponseEntity<EmployeeResponseUpdate> addEmployee(@Valid @RequestBody EmployeeDetails employee) {
         return employeeService.addEmployee(employee);
     }
 
-
+    // endpoint for delete operation
     @DeleteMapping("/delete")
     public ResponseEntity<EmployeeResponseUpdate> deleteEmployee(
         @RequestParam(value = "employeeId") String id) {
             return employeeService.deleteEmployee(id);
     }
 
+    // endpoint for put operation
     @PutMapping("/update-manager")
     public ResponseEntity<EmployeeResponseUpdate> updateEmployeeManager(@RequestBody UpdateEmployeeRequest request) {
         return employeeService.updateEmployeeManager(request);
     }
 
-
+    // endpoint for get operation
     @GetMapping("/viewEmployee")
     public ResponseEntity<EmployeeResponseGet> getFilteredEmployees(
         @RequestParam(value = "year-of-experience", required = false) Integer yearOfExperience,

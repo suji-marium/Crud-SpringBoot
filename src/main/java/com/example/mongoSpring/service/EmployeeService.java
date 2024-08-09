@@ -17,7 +17,6 @@ import com.example.mongoSpring.model.*;
 public class EmployeeService {
     @Autowired
     EmployeeRepo employeeRepo;
-    //Map<String, String> departmentToManagerId = new HashMap<>();
 
     public ResponseEntity<EmployeeResponseUpdate> addEmployee(EmployeeDetails employee){
         List<EmployeeDetails> employees=employeeRepo.findAll();
@@ -50,14 +49,15 @@ public class EmployeeService {
 
 
     public ResponseEntity<EmployeeResponseUpdate> deleteEmployee(String id) {
-
+        //Check whether the employee is present or not
         if (employeeRepo.existsById(id)) {
             Optional<EmployeeDetails> employeeOpt = employeeRepo.findById(id);
 
             if (employeeOpt.isPresent()) {
                 EmployeeDetails employee = employeeOpt.get();
+                //checks if there are employees under the manager or not
                 if (employee.getDesignation().matches("Account Manager")) {
-                    if (employeeRepo.employeeUnderManager(id).isEmpty()) {
+                    if (employeeRepo.findAllByManagerId(id).isEmpty()) {
                         employeeRepo.deleteById(id);
                         EmployeeResponseUpdate response = new EmployeeResponseUpdate(
                             "Successfully deleted " + employee.getName() + " from the employee list of the organization");
@@ -85,7 +85,6 @@ public class EmployeeService {
 
 
     public ResponseEntity<EmployeeResponseUpdate> updateEmployeeManager(UpdateEmployeeRequest request) {
-    
         List<EmployeeDetails> ListemployeeDetails=employeeRepo.findAll();
     
         for(EmployeeDetails employeeDetails:ListemployeeDetails){
@@ -101,7 +100,6 @@ public class EmployeeService {
             EmployeeResponseUpdate response = new EmployeeResponseUpdate("Employee not found");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
-    
         
         EmployeeDetails employee = employeeOpt.get();
         Date today=new Date();                   
@@ -132,7 +130,7 @@ public class EmployeeService {
         List<EmployeeDetails> employees = employeeRepo.findAll();
         System.out.println(employees);
 
-        //Creating a set with managerId
+        //Creating a set with all manager id's
         Set<String> allManagerIds=new HashSet<>();
         for (EmployeeDetails employeeDetails : employees) {
             if ("Account Manager".equals(employeeDetails.getDesignation())) {
@@ -140,6 +138,7 @@ public class EmployeeService {
             }
         }
         
+        // group by managerid
         Map<String, List<EmployeeDetails>> employeesByManager = employees.stream()
             .collect(Collectors.groupingBy(EmployeeDetails::getManagerId));
         
