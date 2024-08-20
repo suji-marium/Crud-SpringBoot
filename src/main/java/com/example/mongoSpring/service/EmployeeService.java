@@ -140,7 +140,9 @@ public class EmployeeService {
         
         // group by managerid
         Map<String, List<EmployeeDetails>> employeesByManager = employees.stream()
+            .filter(emp -> emp.getManagerId() != null) // Filter out null manager IDs
             .collect(Collectors.groupingBy(EmployeeDetails::getManagerId));
+
         
         
         for (String mngId : allManagerIds) {

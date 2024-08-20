@@ -10,4 +10,11 @@ class MongoSpringApplicationTests {
 	void contextLoads() {
 	}
 
+	@Test
+    public void testMainMethod() {
+        String[] args = {};
+        
+        MongoSpringApplication.main(args);
+        
+    }
 }
